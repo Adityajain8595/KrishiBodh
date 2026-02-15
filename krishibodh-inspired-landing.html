@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KrishiBodh – Intelligent Agriculture Through Knowledge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Crimson+Pro:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --forest-green: #2d5016;
+            --sage-green: #7a9b76;
+            --soft-cream: #faf8f3;
+            --warm-beige: #e8e3d5;
+            --clay-brown: #8b7355;
+            --deep-earth: #3d3428;
+            --ai-cyan: #4a9b8e;
+            --mist-white: #f5f7f4;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            color: var(--deep-earth);
+            background: var(--soft-cream);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(250, 248, 243, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(61, 52, 40, 0.08);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--forest-green);
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            font-size: 1.75rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--deep-earth);
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--forest-green);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--forest-green);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            padding: 0.65rem 1.5rem;
+            background: var(--deep-earth);
+            color: var(--soft-cream);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(61, 52, 40, 0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 3rem;
+            gap: 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            padding-top: 5rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(122, 155, 118, 0.12);
+            border: 1px solid rgba(122, 155, 118, 0.2);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--forest-green);
+            font-weight: 500;
+            margin-bottom: 2rem;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--ai-cyan);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .hero h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: clamp(3rem, 5.5vw, 5rem);
+            font-weight: 300;
+            line-height: 1.15;
+            color: var(--forest-green);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero h1 strong {
+            font-weight: 400;
+            position: relative;
+            display: inline-block;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--clay-brown);
+            max-width: 540px;
+            margin-bottom: 3rem;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--deep-earth);
+            color: var(--soft-cream);
+            box-shadow: 0 4px 16px rgba(61, 52, 40, 0.15);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(61, 52, 40, 0.25);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--forest-green);
+            border: 1.5px solid var(--sage-green);
+        }
+
+        .btn-secondary:hover {
+            background: var(--forest-green);
+            color: var(--soft-cream);
+            border-color: var(--forest-green);
+            transform: translateY(-3px);
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            position: relative;
+            height: 600px;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .visual-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(122, 155, 118, 0.08) 0%, rgba(74, 155, 142, 0.06) 100%);
+        }
+
+        /* Layered Visual Elements */
+        .visual-layer {
+            position: absolute;
+            border-radius: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .layer-base {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 75%;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            z-index: 1;
+        }
+
+        .layer-device {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 85%;
+            background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+            z-index: 2;
+            box-shadow: 0 20px 60px rgba(61, 52, 40, 0.15);
+            border: 8px solid var(--deep-earth);
+        }
+
+        .device-screen {
+            position: absolute;
+            top: 15%;
+            left: 8%;
+            right: 8%;
+            bottom: 15%;
+            background: linear-gradient(135deg, #1a2f1a 0%, #2d5016 100%);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* AI Data Overlay */
+        .data-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            padding: 1.5rem;
+            opacity: 0;
+            animation: dataFadeIn 1.2s ease-out 0.8s forwards;
+        }
+
+        @keyframes dataFadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .data-card {
+            background: rgba(250, 248, 243, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(250, 248, 243, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--soft-cream);
+            animation: floatUp 3s ease-in-out infinite;
+        }
+
+        .data-card:nth-child(1) { animation-delay: 0s; }
+        .data-card:nth-child(2) { animation-delay: 0.3s; }
+        .data-card:nth-child(3) { animation-delay: 0.6s; }
+        .data-card:nth-child(4) { animation-delay: 0.2s; }
+        .data-card:nth-child(5) { animation-delay: 0.5s; }
+        .data-card:nth-child(6) { animation-delay: 0.4s; }
+
+        @keyframes floatUp {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .data-label {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .data-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ai-cyan);
+        }
+
+        /* Floating Elements */
+        .floating-element {
+            position: absolute;
+            border-radius: 12px;
+            opacity: 0.4;
+        }
+
+        .float-1 {
+            top: 10%;
+            right: -5%;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(74, 155, 142, 0.2), rgba(122, 155, 118, 0.2));
+            animation: floatDiagonal 8s ease-in-out infinite;
+        }
+
+        .float-2 {
+            bottom: 15%;
+            left: -8%;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(122, 155, 118, 0.15), rgba(232, 227, 213, 0.3));
+            animation: floatDiagonal 6s ease-in-out infinite reverse;
+            border-radius: 50%;
+        }
+
+        .float-3 {
+            top: 30%;
+            left: 5%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(139, 115, 85, 0.2), rgba(122, 155, 118, 0.2));
+            animation: floatDiagonal 7s ease-in-out infinite;
+            border-radius: 50%;
+        }
+
+        @keyframes floatDiagonal {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            50% {
+                transform: translate(15px, -15px) rotate(5deg);
+            }
+        }
+
+        /* Neural Network Lines (Subtle) */
+        .neural-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            opacity: 0.08;
+        }
+
+        .neural-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--forest-green), transparent);
+            animation: linePulse 4s ease-in-out infinite;
+        }
+
+        .line-1 {
+            top: 20%;
+            left: 0;
+            right: 0;
+            animation-delay: 0s;
+        }
+
+        .line-2 {
+            top: 50%;
+            left: 0;
+            right: 0;
+            animation-delay: 1s;
+        }
+
+        .line-3 {
+            top: 80%;
+            left: 0;
+            right: 0;
+            animation-delay: 2s;
+        }
+
+        @keyframes linePulse {
+            0%, 100% {
+                opacity: 0;
+                transform: scaleX(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+                padding: 0 2rem;
+            }
+
+            .hero-visual {
+                height: 500px;
+            }
+
+            .nav-container {
+                padding: 1.25rem 2rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .nav-cta {
+                font-size: 0.85rem;
+                padding: 0.6rem 1.2rem;
+            }
+
+            .hero {
+                padding: 0 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+
+            .hero-visual {
+                height: 400px;
+            }
+
+            .data-overlay {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 1rem;
+            }
+
+            .data-card {
+                padding: 0.75rem;
+            }
+
+            .data-label {
+                font-size: 0.6rem;
+            }
+
+            .data-value {
+                font-size: 0.95rem;
+            }
+
+            .btn {
+                padding: 0.85rem 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Accessibility */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus States */
+        .nav-link:focus-visible,
+        .nav-cta:focus-visible,
+        .btn:focus-visible {
+            outline: 2px solid var(--forest-green);
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">🌾</span>
+                <span>KrishiBodh</span>
+            </a>
+            <div class="nav-links">
+                <a href="#platform" class="nav-link">Platform</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#insights" class="nav-link">Insights</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#login" class="nav-cta">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                <span>AI-Powered Agricultural Intelligence</span>
+            </div>
+            
+            <h1>
+                Cultivate knowledge.<br>
+                <strong>Harvest wisdom.</strong>
+            </h1>
+            
+            <p class="hero-subtitle">
+                KrishiBodh brings intelligent agricultural guidance to your fingertips. 
+                Make data-driven decisions with AI-powered insights tailored to your land, 
+                crops, and climate—all in one trusted platform.
+            </p>
+            
+            <div class="hero-cta-group">
+                <a href="#explore" class="btn btn-primary">
+                    Explore KrishiBodh
+                    <span>→</span>
+                </a>
+                <a href="#ai" class="btn btn-secondary">
+                    Ask the AI
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <!-- Neural Network Background Lines -->
+            <div class="neural-lines">
+                <div class="neural-line line-1"></div>
+                <div class="neural-line line-2"></div>
+                <div class="neural-line line-3"></div>
+            </div>
+
+            <!-- Floating Elements -->
+            <div class="floating-element float-1"></div>
+            <div class="floating-element float-2"></div>
+            <div class="floating-element float-3"></div>
+
+            <!-- Main Visual Container -->
+            <div class="visual-container">
+                <div class="visual-layer layer-base"></div>
+                <div class="visual-layer layer-device">
+                    <div class="device-screen">
+                        <!-- AI Data Overlay representing agricultural insights -->
+                        <div class="data-overlay">
+                            <div class="data-card">
+                                <div class="data-label">Soil Health</div>
+                                <div class="data-value">Optimal</div>
+                            </div>
+                            <div class="data-card">
+                                <div class="data-label">Irrigation</div>
+                                <div class="data-value">2.5 hrs</div>
+                            </div>
+                            <div class="data-card">
+                                <div class="data-label">Pest Risk</div>
+                                <div class="data-value">Low</div>
+                            </div>
+                            <div class="data-card">
+                                <div class="data-label">NPK Ratio</div>
+                                <div class="data-value">12:10:8</div>
+                            </div>
+                            <div class="data-card">
+                                <div class="data-label">Yield Est.</div>
+                                <div class="data-value">+18%</div>
+                            </div>
+                            <div class="data-card">
+                                <div class="data-label">Weather</div>
+                                <div class="data-value">Clear</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Parallax effect on hero visual
+        document.addEventListener('mousemove', (e) => {
+            const hero = document.querySelector('.hero-visual');
+            const layers = document.querySelectorAll('.visual-layer');
+            const floaters = document.querySelectorAll('.floating-element');
+            
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+            
+            layers.forEach((layer, index) => {
+                const depth = (index + 1) * 0.5;
+                layer.style.transform = `translate(calc(-50% + ${xAxis * depth}px), calc(-50% + ${yAxis * depth}px))`;
+            });
+            
+            floaters.forEach((floater, index) => {
+                const depth = (index + 1) * 0.3;
+                const currentTransform = floater.style.transform || '';
+                if (!currentTransform.includes('translate3d')) {
+                    floater.style.transform = `translate3d(${xAxis * depth}px, ${yAxis * depth}px, 0)`;
+                }
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

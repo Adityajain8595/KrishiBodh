@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: deeptrust-api
+    env_file:
+      - backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: deeptrust-frontend
+    ports:
+      - "5173:4173"
+    depends_on:
+      - api
+
+  db:
+    image: postgres:16
+    container_name: deeptrust-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: deeptrust
+      POSTGRES_PASSWORD: deeptrust
+      POSTGRES_DB: deeptrust
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: deeptrust-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data: {}
+

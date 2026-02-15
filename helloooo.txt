@@ -1,0 +1,251 @@
+===============================================================================
+                        TECHNICAL DOCUMENTATION
+                    Krishibodh / AgriTech AI Platform
+===============================================================================
+
+1. PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+
+Purpose of the project:
+The project is an agricultural decision support platform branded as KrishiBodh. It provides farmers, FPOs (Farmer Producer Organizations), and agronomy teams with AI-guided intelligence for irrigation optimization, crop recommendation, yield prediction, pest risk analysis, government scheme eligibility, market prices, and conversational assistance. The platform combines rule-based deterministic modules with AI-powered explanation and assistance.
+
+Core problem it solves:
+Farmers lack integrated tools to combine irrigation planning, crop selection, yield forecasting, pest management, government scheme discovery, and market price awareness. This platform aggregates these concerns into a single web application with contextual AI assistance, bilingual support (English/Hindi), and real weather and market data integration where available.
+
+Target users:
+Farmers, FPOs, agronomy teams, and agricultural extension workers in India. The system is designed for Indian cropping seasons (Kharif, Rabi, Zaid), Indian states, and government schemes.
+
+High-level system behavior:
+A React SPA (Single Page Application) serves the UI. Unauthenticated users see a landing page and can sign in or sign up via Firebase (email/password or Google). Authenticated users access a layout with sidebar navigation and pages for Dashboard, Water & Irrigation, Crop Recommendation, Yield & Pest, Market Prices, Government Schemes, Manage Schemes (admin), Assistance (AI chatbot with TTS/STT), Reports, and Settings. The frontend calls a Node.js/Express backend on /api. The backend uses rule-based services for irrigation, crops, yield, pests, weather, and market data; file-based JSON storage for schemes; and Google Gemini for AI assistance. Weather comes from Open-Meteo; market prices from data.gov.in (when API key configured); TTS from Google Cloud Text-to-Speech; STT from Groq Whisper.
+
+
+2. COMPLETE TECH STACK BREAKDOWN
+--------------------------------------------------------------------------------
+
+Frontend framework/library:
+React 18.3.0. Used as the UI library for all pages and components. Provides component composition, hooks (useState, useEffect, useMemo, useCallback), and context (AuthContext, LanguageContext). Interacts with react-dom for rendering.
+
+Backend framework:
+Express 4.21.0. Used as the HTTP server and routing layer. Handles CORS, JSON body parsing (1MB limit), route mounting, and centralized error handling. Interacts with controllers and middleware.
+
+Programming languages:
+TypeScript 5.4.0 for frontend (tsconfig targets ESNext, strict mode, JSX react-jsx). JavaScript (Node.js 18+) for backend. No Python backend exists; SETUP.md references FastAPI but the actual backend is Node.js in backend-node.
+
+Database(s) and ORM/ODM:
+No relational database or ORM is used by the backend-node application. Government schemes are stored in a file-based JSON store (backend-node/src/data/schemes-store.json) via schemes-db.js. The schemes-db module loads and saves JSON with fs.readFileSync and fs.writeFileSync. The docker-compose.yml references PostgreSQL and Redis, but the backend-node codebase does not connect to them; that docker setup appears to target a different (or legacy) architecture.
+
+Authentication mechanism:
+Firebase Authentication (firebase 12.0.0) on the frontend. Users sign in with email/password or Google (popup or redirect). The frontend stores the Firebase user state in AuthContext. For protected backend routes, the frontend sends the Firebase ID token in the Authorization: Bearer header. The backend uses firebase-admin 12.7.0 to verify tokens via middleware firebaseAuth.js (verifyFirebaseToken). If FIREBASE_SERVICE_ACCOUNT is not set, auth verification returns 503. Routes that require auth: /api/assistant/* (ask, tts, transcribe), /api/schemes POST/PUT/DELETE (admin).
+
+APIs (internal and external):
+Internal: REST API under /api. Prefix configured in backend config/index.js as /api. Routes: /api/irrigation/predict, /api/crops/list, /api/crops/recommend, /api/yield/predict, /api/pests/analyze, /api/chat/ask, /api/weather, /api/market/prices, /api/assistant/ask, /api/assistant/tts, /api/assistant/transcribe, /api/schemes, /api/schemes/eligible, /api/schemes/:id, /health.
+External: Open-Meteo Geocoding API and Forecast API (no key); data.gov.in AGMARKNET resource (requires DATA_GOV_IN_API_KEY); Google Gemini (GEMINI_API_KEY); Google Cloud Text-to-Speech (GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_CLOUD_TTS_KEY); Groq Whisper (GROQ_API_KEY).
+
+AI/ML models or services:
+Google Gemini (@google/genai 1.39.0) via gemini.service.js for assistance/explanation. The assistance.service.js uses @google/generative-ai. Both are present; the assistant routes use gemini.service. No custom ML models; all logic is rule-based except for the conversational AI.
+
+Cloud services, SDKs, or keys usage:
+Firebase (frontend: VITE_FIREBASE_* env vars; backend: FIREBASE_SERVICE_ACCOUNT JSON). Google Gemini: GEMINI_API_KEY. Google Cloud TTS: GOOGLE_APPLICATION_CREDENTIALS (path to key.json) or GOOGLE_CLOUD_TTS_KEY (JSON string). Groq: GROQ_API_KEY. data.gov.in: DATA_GOV_IN_API_KEY. The backend-node/key.json file exists; it is likely a service account key for Firebase or Google Cloud.
+
+Build tools and package managers:
+npm for both frontend and backend. Frontend: Vite 7.3.1 with @vitejs/plugin-react-swc. Backend: no build step; Node runs src/server.js directly. Tailwind CSS 3.4.3 with PostCSS and Autoprefixer. TypeScript compiler (tsconfig noEmit) for type-checking.
+
+
+3. FOLDER & FILE STRUCTURE EXPLANATION
+--------------------------------------------------------------------------------
+
+Root:
+Project root contains frontend/, backend-node/, docker-compose.yml, .gitignore, README.md, SETUP.md, CONNECT.md, and various markdown docs (DEBUG_GEMINI.md, GEMINI_SETUP.md, etc.). Standalone HTML files (krishbodh-login.html, etc.) exist but are not part of the main application.
+
+frontend/:
+React application. index.html is the entry HTML; vite.config.ts configures Vite, proxy (/api, /health to localhost:3000). src/main.tsx bootstraps React with BrowserRouter, AuthProvider, LanguageProvider. src/App.tsx defines Routes. src/styles.css holds global styles. tailwind.config.cjs, postcss.config.cjs for Tailwind. tsconfig.json for TypeScript. Dockerfile for containerized frontend build. .env.example lists VITE_FIREBASE_* variables (VITE_API_BASE not present; dev uses proxy).
+
+frontend/src/components/:
+auth/: ProtectedRoute.tsx (redirects unauthenticated to /landing), PublicOnlyRoute.tsx (wraps Login/SignUp). dashboard/: ChartCard.tsx, MetricCard.tsx for dashboard visualizations. layout/: Layout.tsx (sidebar + outlet), Sidebar.tsx (nav links, user section), TopBar.tsx (language toggle, sign out). ui/: Card.tsx, Skeleton.tsx. ResultsPanel.tsx, SeedBuying.tsx, UploadArea.tsx are feature components.
+
+frontend/src/contexts/:
+AuthContext.tsx: provides user and loading from Firebase onAuthStateChanged. LanguageContext.tsx: provides language (en/hi), setLanguage, isHindi; persists to localStorage key krishibodh-language.
+
+frontend/src/hooks/:
+useDashboardData.ts: fetches dashboard data (metrics, charts) from localStorage (recent-yield, recent-irrigation, recent-crop), weatherApi, marketApi; generates yield/weather/soil/market/crop distribution data; returns loading, error, weatherUnavailable.
+
+frontend/src/lib/:
+api.ts: base fetch wrapper (get, post, put, delete), getAuthToken from Firebase, parseError, wrapNetworkError. Exports irrigationApi, cropApi, yieldApi, pestApi, chatApi, weatherApi, marketApi, assistanceApi, ttsApi, sttApi, schemesApi. auth.ts: signInWithGoogle, signInWithEmail, signUpWithEmail, logout, completeRedirectSignIn, friendlyAuthError. firebase.ts: initializeApp, getAuth, GoogleAuthProvider, setPersistence browserLocalPersistence; checks env for placeholder values. translations.ts: TranslationKey union type, translations object (en, hi), useTranslation hook, t() helper.
+
+frontend/src/pages/:
+index.ts re-exports all page components. Landing.tsx, Login.tsx, SignUp.tsx (public). Dashboard.tsx, WaterIrrigation.tsx, CropRecommendation.tsx, YieldPest.tsx, MarketPrices.tsx, GovernmentSchemes.tsx, SchemesAdmin.tsx, Assistance.tsx, Reports.tsx, Settings.tsx (protected under Layout).
+
+backend-node/:
+Node.js backend. src/server.js is the entry point; requires app.js and listens on config.port (default 3000). src/app.js mounts routes and error handler. .env.example is empty in the repository. key.json exists (service account). docs/SCHEMES_API.md.
+
+backend-node/src/config/:
+index.js: exports env, port (from PORT or 3000), root path, apiPrefix /api.
+
+backend-node/src/routes/:
+Express routers. irrigation.routes.js: POST /predict. crops.routes.js: GET /list, POST /recommend. yield.routes.js: POST /predict. pest.routes.js: (not read but referenced in app). chat.routes.js: (referenced). weather.routes.js: GET /. market.routes.js: (referenced). assistant.routes.js: all routes use verifyFirebaseToken; POST /ask, POST /tts, POST /transcribe (multer for file), GET /health. schemes.routes.js: GET /eligible, GET /, GET /:id public; POST, PUT, DELETE require verifyFirebaseToken. assistance.routes.js exists; app mounts assistant.routes at /api/assistant.
+
+backend-node/src/controllers/:
+Each controller corresponds to a route module. Validates request body (via utils/validation.js where applicable), calls service, returns JSON or error. assistant.controller.js validates question, language, history; calls geminiService.askGemini.
+
+backend-node/src/services/:
+irrigation.service.js: uses weather.service for location; rule-based daily/weekly water, schedule, efficiency, risk. crops.service.js: SEASON_CROPS, SOIL_SUITABILITY, rule-based suitability; uses weather for temp. yield.service.js: rule-based yield prediction; uses weather for factor. pest.service.js: rule-based pest risk; uses weather. weather.service.js: Open-Meteo geocoding (multi-strategy: city+state, city only, state-capital fallback) and forecast; 30-min cache. market.service.js: data.gov.in API; requires DATA_GOV_IN_API_KEY; 1h cache. schemes.service.js: getEligibleSchemes (rule-based), listSchemes, getSchemeById, CRUD; uses schemes-db. gemini.service.js: Google GenAI client; buildContextSummary, askGemini. assistance.service.js: GoogleGenerativeAI; session memory, buildContextSummary, buildSystemPrompt, isAgricultureRelated. tts.service.js: @google-cloud/text-to-speech; textToSpeechAudio. stt.service.js: groq-sdk; transcribeAudio with whisper-large-v3-turbo.
+
+backend-node/src/middleware/:
+firebaseAuth.js: verifyFirebaseToken; initializes Firebase Admin from FIREBASE_SERVICE_ACCOUNT JSON; verifies Bearer token; sets req.user (uid, email).
+
+backend-node/src/data/:
+schemes-db.js: load(), save(), getNextId(); reads/writes schemes-store.json. schemes-store.json: JSON with schemes, scheme_crops, scheme_regions, scheme_farmer_types arrays.
+
+backend-node/src/utils/:
+errors.js: AppError, validationError, notFoundError, errorHandler (sends JSON { error }). validation.js: required, numberInRange, oneOf, validateIrrigationBody, validateCropsBody, validateYieldBody, validatePestBody, validateChatBody.
+
+
+4. FRONTEND ARCHITECTURE & FLOW
+--------------------------------------------------------------------------------
+
+Page/component structure:
+Pages are functional components exported from pages/index.ts. Landing, Login, SignUp are standalone. Protected pages are wrapped in Layout, which renders Sidebar and TopBar and an Outlet for child routes. Dashboard uses MetricCard, ChartCard, Recharts (BarChart, AreaChart, PieChart, LineChart). WaterIrrigation, CropRecommendation, YieldPest, MarketPrices use forms and ResultsPanel or similar. GovernmentSchemes has filter sidebar and scheme cards. SchemesAdmin has add/edit forms and table. Assistance has chat UI, message list, input, TTS play, STT record. Reports and Settings are present.
+
+Routing mechanism:
+React Router DOM 6.28.0. BrowserRouter in main.tsx with future flags v7_startTransition, v7_relativeSplatPath. App.tsx defines Routes: /landing, /login, /signup (PublicOnlyRoute), / (ProtectedRoute with Layout) and nested index, /water, /crop, /yield, /market, /schemes, /schemes/admin, /assistance, /reports, /settings. Catch-all * redirects to /landing.
+
+State management approach:
+No Redux or global store. Local component state via useState. AuthContext for user and loading. LanguageContext for language (en/hi). Session-specific data (e.g. Assistance messages) in component state. Recent yield, irrigation, crop stored in localStorage by WaterIrrigation, CropRecommendation, YieldPest; read by Dashboard via useDashboardData.
+
+API consumption flow:
+Frontend lib/api.ts provides typed functions (irrigationApi.predict, cropApi.recommend, etc.) that call fetch to API_BASE (empty in dev, so same-origin; Vite proxies /api and /health to localhost:3000). For auth-required calls, getAuthToken() adds Authorization: Bearer <Firebase ID token>. Responses are JSON; errors throw with message from backend or network wrapper.
+
+Language/i18n handling:
+LanguageContext stores language in state and localStorage (krishibodh-language). useTranslation() returns t(key) from translations[language][key]. TranslationKey is a union of string literals. translations.ts contains full en and hi maps for dashboard, water, crop, yield, market, assistance, reports, settings, auth, form, schemes, etc. TopBar has EN/hindi toggle. All UI text in translated pages should use t().
+
+UI to Backend interaction lifecycle:
+User action (e.g. submit form) triggers handler. Handler calls API function (e.g. irrigationApi.predict). api.post adds Content-Type, optionally Authorization. Fetch goes to Vite dev server; proxy forwards to backend. Backend controller validates, calls service, returns JSON. Frontend receives response or catch block handles error. State updates (setResults, setError) trigger re-render. For Assistance, TTS/STT use FormData or JSON body; response is Blob (audio) or { transcription }.
+
+
+5. BACKEND ARCHITECTURE & FLOW
+--------------------------------------------------------------------------------
+
+Server setup and entry point:
+server.js requires dotenv, app, config. Calls app.listen(config.port). Handles SIGTERM and SIGINT for graceful shutdown. app.js is the Express app exported for testing or alternate entry.
+
+API route structure:
+All API routes prefixed with config.apiPrefix (/api). Mount points: /api/irrigation, /api/crops, /api/yield, /api/pests, /api/chat, /api/weather, /api/market, /api/assistant, /api/schemes. /health is at root (no prefix). 404 handler runs for unregistered paths; errorHandler sends { error }.
+
+Request to controller to service to database flow:
+Request hits route. Route handler is controller method (e.g. irrigationController.predict). Controller validates body via validation helpers, returns 400 on error. Controller calls service (e.g. irrigationService.predict). Service performs business logic, may call external APIs (weather, market) or db (schemes-db). Service returns data. Controller sends res.json(data). No ORM; schemes-db is sync file I/O.
+
+Validation and error handling:
+validation.js exports validateIrrigationBody, validateCropsBody, validateYieldBody, validatePestBody, validateChatBody. Controllers call these and pass first error to validationError() which throws AppError with statusCode 400. errors.js errorHandler sends res.status(status).json({ error: message }). 404 handler throws before errorHandler.
+
+Middleware usage:
+cors: allows localhost:5173, 5174, 127.0.0.1:5173, 5174, CORS_ORIGIN. express.json limit 1mb. verifyFirebaseToken on assistant and schemes admin routes. No global auth; per-route application. Multer used in transcribe route for file upload.
+
+Session or token handling:
+No server-side sessions. Firebase ID token verified per request for protected routes. Token from Authorization: Bearer header. Decoded token provides uid, email on req.user. No refresh token handling; client obtains new token from Firebase as needed.
+
+
+6. DATABASE DESIGN & DATA FLOW
+--------------------------------------------------------------------------------
+
+Database type and reason:
+No SQL or NoSQL database. Government schemes use file-based JSON (schemes-store.json). Reason: simple CRUD without database setup; suitable for curated, low-volume scheme data. The docker-compose defines PostgreSQL and Redis but backend-node does not use them.
+
+Schema/models explanation:
+schemes-store.json has top-level keys: schemes, scheme_crops, scheme_regions, scheme_farmer_types. schemes: id, name, name_hi, description, benefits, eligibility_text, application_process, application_mode, start_date, end_date, is_active, source_url, scheme_level, benefit_tags, needs_admin_review, external_link, etc. scheme_crops: scheme_id, crop_name, season. scheme_regions: scheme_id, state, district. scheme_farmer_types: scheme_id, farmer_type. No formal schema validation; structure is implicit in schemes.service.js.
+
+Relationships between entities:
+schemes is the main entity. scheme_crops, scheme_regions, scheme_farmer_types reference schemes by scheme_id. Many-to-many: one scheme can have multiple crops, regions, farmer types. Eligibility matching joins these in memory.
+
+How data is created, read, updated, deleted:
+schemes-db.load() reads JSON from disk. save(data) writes JSON. getNextId(table, key) computes next integer id. schemes.service getEligibleSchemes filters by state/region, crop/season, farmer_type. listSchemes returns active or all. getSchemeById finds by id. create: generates id, appends to schemes and relations, saves. update: finds scheme, merges, saves. deactivate: sets is_active false, saves.
+
+
+7. AUTHENTICATION & SECURITY
+--------------------------------------------------------------------------------
+
+Login/signup flow:
+User visits /login or /signup. PublicOnlyRoute allows access when unauthenticated. Login: email/password or Google. signInWithEmail or signInWithGoogle from auth.ts. Firebase handles credential check. On success, onAuthStateChanged updates AuthContext. User is redirected to dashboard or previous location. SignUp: createUserWithEmailAndPassword. No email verification step in code.
+
+Token/session lifecycle:
+Frontend: Firebase Auth keeps user session; persistence is browserLocalPersistence. When calling protected API, getAuthToken() calls auth.currentUser.getIdToken(). Token sent as Bearer. Backend: verifyFirebaseToken extracts token, calls admin.auth().verifyIdToken(token). On success, req.user = { uid, email }; next(). On failure, 401 or 503 if Firebase not initialized.
+
+Role-based access:
+No role-based access control. Protection is binary: authenticated or not. SchemesAdmin is accessible to any authenticated user; there is no admin role check. ProtectedRoute only checks user presence.
+
+Environment variables usage:
+Frontend: VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_STORAGE_BUCKET, VITE_FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_APP_ID. Backend: PORT, NODE_ENV, CORS_ORIGIN, FIREBASE_SERVICE_ACCOUNT (JSON string), GEMINI_API_KEY, DATA_GOV_IN_API_KEY, GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_CLOUD_TTS_KEY, GROQ_API_KEY. .env.example for backend is empty in repo.
+
+
+8. EXTERNAL INTEGRATIONS
+--------------------------------------------------------------------------------
+
+AI services:
+Google Gemini: gemini.service.js uses @google/genai GoogleGenAI. askGemini(question, context, language, history). Used by assistant controller. assistance.service.js uses @google/generative-ai GoogleGenerativeAI; separate implementation path. Gemini provides conversational explanations; does not make decisions or generate numbers per system prompt.
+
+TTS: Google Cloud Text-to-Speech (@google-cloud/text-to-speech). tts.service.js. Credentials from GOOGLE_APPLICATION_CREDENTIALS (file path) or GOOGLE_CLOUD_TTS_KEY (JSON). Voices: en male/female, hi male/female. Returns MP3 buffer. Used by /api/assistant/tts.
+
+STT: Groq SDK (groq-sdk). stt.service.js. Model whisper-large-v3-turbo. Accepts audio buffer, writes to temp file, streams to Groq. Returns transcribed text. Used by /api/assistant/transcribe. Requires GROQ_API_KEY.
+
+Payment gateways:
+None implemented.
+
+Analytics or logging services:
+No analytics SDK. Console.log used in controllers and services for request/response logging. No structured logging or external log aggregation.
+
+How failures are handled:
+External API failures: weather returns null on geocode/forecast failure; controller returns 404 with message. Market returns { dataNotAvailable: true } when DATA_GOV_IN_API_KEY missing or fetch fails. Gemini throws; controller passes to errorHandler; 500 with message. TTS/STT throw with user-friendly messages; controller passes to next. Network errors in frontend: wrapNetworkError suggests backend not reachable. All errors surfaced as user-visible messages or fallback UI (e.g. weatherUnavailable).
+
+
+9. END-TO-END SYSTEM FLOW
+--------------------------------------------------------------------------------
+
+User opens the website:
+Browser loads index.html. Script loads /src/main.tsx. ReactDOM.createRoot mounts App inside BrowserRouter, AuthProvider, LanguageProvider. AuthProvider runs onAuthStateChanged; loading true then false when Firebase resolves. LanguageProvider reads localStorage krishibodh-language. App renders Routes. Default route * Navigate to /landing. User sees Landing page. If already signed in, user could navigate to / and see Dashboard (ProtectedRoute allows).
+
+User interacts with the dashboard:
+User navigates to / (or clicks Dashboard in sidebar). ProtectedRoute checks user; if none, Navigate to /landing. If user exists, Layout renders with Sidebar and TopBar. Outlet renders Dashboard. Dashboard initializes selectedCrop, selectedSeason, selectedLocation from localStorage (recent-crop, recent-yield, recent-irrigation). useDashboardData(selectedCrop, selectedSeason, selectedLocation) runs. useEffect fetches: reads localStorage for yield/irrigation/crop; if location valid, calls weatherApi.get(location); calls marketApi.getPrices. Metrics and charts computed from parsed data and API responses. setData updates state. UI renders MetricCards, ChartCards, filters. User changes filter; state updates; useDashboardData re-runs with new deps; refetch occurs. handleRefresh triggers window.location.reload.
+
+User sends data/input:
+Example: Crop Recommendation. User fills location, soil, season, farm size. Clicks Get recommendations. Handler calls cropApi.recommend(body). api.post sends POST /api/crops/recommend with JSON body. No requireAuth; crop routes are public.
+
+Backend processes the request:
+Request hits Express. cors allows. express.json parses body. Route POST /api/crops/recommend invokes cropsController.recommend. Controller validates via validateCropsBody; on error throws validationError. Controller calls cropsService.recommend. Service optionally fetches weather for location via weatherService; builds candidate crops from SEASON_CROPS; scores by soil, season, temp; returns recommendedCrops, confidence. Controller res.json(result).
+
+Response is generated and shown:
+Frontend receives JSON. Promise resolves. Handler sets results state. Component re-renders. ResultsPanel or similar displays recommended crops. localStorage may be updated (recent-crop) for dashboard reuse.
+
+Assistance flow with auth:
+User types question in Assistance. Handler checks usage limit (20/min). Calls assistanceApi.ask({ question, context, language, history }, true). api.post with requireAuth true adds Authorization: Bearer <token>. Request hits POST /api/assistant/ask. verifyFirebaseToken runs; verifies token, sets req.user. assistantController.ask validates question, calls geminiService.askGemini. Response { answer }. Frontend appends assistant message. TTS: user clicks play; ttsApi.synthesize({ text, lang, voice }); POST /api/assistant/tts with auth; returns Blob; frontend plays via AudioContext. STT: user records; Blob sent via FormData to POST /api/assistant/transcribe; returns { transcription }; used as input.
+
+
+10. DEPLOYMENT & RUNTIME
+--------------------------------------------------------------------------------
+
+How the app is run locally:
+Frontend: cd frontend && npm install && npm run dev. Vite starts on port 5173. Backend: cd backend-node && npm install && node --watch src/server.js (or npm run dev). Backend listens on port 3000. User opens http://localhost:5173. Vite proxies /api and /health to http://localhost:3000.
+
+Environment setup:
+Frontend: copy .env.example to .env; fill VITE_FIREBASE_* with Firebase web config. Backend: create .env with PORT, FIREBASE_SERVICE_ACCOUNT (JSON string of service account), GEMINI_API_KEY, optionally DATA_GOV_IN_API_KEY, GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_CLOUD_TTS_KEY, GROQ_API_KEY. key.json can be used for Firebase Admin if path set in GOOGLE_APPLICATION_CREDENTIALS.
+
+Build process:
+Frontend: npm run build. Vite produces static assets in dist/. Backend: no build; Node runs source directly. Frontend Dockerfile: multi-stage; build stage runs npm run build; serve stage uses a static server (e.g. nginx or similar) for dist.
+
+Production considerations:
+VITE_API_BASE: if frontend is served from different origin than backend, set VITE_API_BASE to backend URL so fetch uses full path. CORS: backend allowedOrigins includes process.env.CORS_ORIGIN. docker-compose references backend/Dockerfile and backend/.env; actual backend lives in backend-node; docker setup may need adjustment. PostgreSQL and Redis in docker-compose are not used by backend-node. No production-specific env examples or deployment scripts in the main codebase.
+
+
+11. KNOWN LIMITATIONS & MISSING FEATURES
+--------------------------------------------------------------------------------
+
+Bugs visible from code:
+GovernmentSchemes useEffect previously included t (translation function) in dependency array, causing infinite API calls to /api/schemes/eligible; this was fixed by removing t from deps. Weather API 404 for bare state names (e.g. West Bengal) was addressed with backend geocoding fallbacks; frontend validation relaxed.
+
+Incomplete features:
+Reports page: structure exists but report generation may use client-side data only; no dedicated backend report API documented. Seed buying recommendations: SeedBuying component exists; integration level not fully traced. AIAssistant page: exported but not in main App routes; may be legacy or alternate entry. Chat module (AquaFarm, AgriSmart, CropGuard): chatApi and chat routes exist; distinct from assistant which uses Gemini.
+
+Hard-coded values or risks:
+Allowed CORS origins include localhost explicitly. Firebase config validation rejects placeholder strings (your_api_key, your_project) but if .env has real values, key exposure risk exists if repo is public. key.json in backend-node should not be committed (check .gitignore). Market prices: when DATA_GOV_IN_API_KEY not set, returns empty; UI shows data not available. TTS/STT require separate API keys; failures degrade to error messages. Schemes admin has no RBAC; any authenticated user can create/edit schemes. Docker Compose references backend/ and backend/Dockerfile which do not match backend-node layout; docker-compose up would fail without adjustment.
+
+===============================================================================
+                              END OF DOCUMENT
+===============================================================================
